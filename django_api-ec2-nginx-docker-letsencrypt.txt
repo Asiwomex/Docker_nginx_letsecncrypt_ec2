@@ -1,0 +1,128 @@
+# Deploying a Django API on AWS EC2 with Nginx, Docker, and Let's Encrypt
+
+This guide walks you through deploying a Django API on an Amazon Elastic Compute Cloud (EC2) instance, utilizing Nginx as a web server, Docker for containerization, and Let's Encrypt for securing your API with HTTPS
+
+**Part 1: Setting Up the EC2 Instance and Nginx**
+
+1.    **Launch an EC2 Instance:**
+Log in to AWS and navigate to the EC2 dashboard.
+Click on "Launch Instance" and select an Ubuntu AMI (or your preferred Linux distribution).
+Follow the wizard to configure your instance, including selecting the instance type, configuring instance details, adding storage, and configuring security groups (ensure port 80 and 443 are open).
+
+2.    **SSH into the Server:**
+Use SSH to connect to your Ubuntu server. You can find the SSH command in the EC2 dashboard under "Connect" for your instance.
+
+3.    **Update Packages:**
+sudo apt update 
+
+4.    **Install Nginx:**
+sudo apt install nginx 
+
+5.    **Start Nginx:**
+sudo systemctl start nginx 
+
+6.    **Confirm Nginx is Working:**
+Copy the Public IPv4 DNS or Public IP of your Ubuntu server and open it in a web browser. You should see the default Nginx welcome page.
+
+7.    **Set Up Custom Domain:**
+Go to Route53 (or your DNS provider) and create a new record for your domain name, pointing to your server's IP address.
+
+8.    **Confirm Domain Setup:**
+Open your custom domain in a web browser to confirm it loads the Nginx welcome page.
+
+# Part 2: Setting Up Your Django API with Docker
+
+9.    **Install Docker and Docker Compose:**
+
+sudo apt install docker.io && sudo apt install docker-compose 
+
+10. **Verify Docker Compose Installation:**
+
+sudo docker-compose -v 
+
+11. **Create API Directory:**
+
+mkdir Api  cd Api/  sudo nano docker-compose.yml` 
+
+    Paste your Docker Compose configuration into the compose.yml file and save it. This file should include configurations for your Django API and any other services you need (e.g., PostgreSQL).
+
+13. **Start Docker Containers:**
+
+docker-compose up -d --build 
+
+14. **Confirm Containers Are Running:**
+
+docker-compose ps
+
+# Part 3: Configuring Nginx to Serve Your API
+
+15. **Create Nginx Configuration File:**
+
+sudo nano /etc/nginx/conf.d/todo.conf
+
+ Paste the following configuration into the file, replacing **domain-name/ip** with your custom domain name or server IP, and save the file.
+
+
+
+server{
+	listen 80;server_name domain-name/ip;
+	location / {
+		proxy_pass http://127.0.0.1:8000;
+		proxy_set_header Host $host;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	}
+}
+
+
+
+
+16. **Test Nginx Configuration:**
+
+sudo nginx -t 
+
+17. **Restart Nginx:**
+
+sudo systemctl restart nginx 
+
+18. **Confirm API is Served Over HTTP:**
+Refresh your browser to confirm your website is displaying the API.
+
+# Part 4: Configuring HTTPS with Let's Encrypt Certbot
+
+19. **Install Certbot:**
+
+sudo snap install --classic certbot 
+
+20. **Prepare Certbot Command:**
+
+`sudo ln -s /snap/bin/certbot /usr/bin/certbot 
+
+21. **Obtain and Install SSL Certificate:**
+
+sudo certbot --nginx 
+
+22. **Restart Nginx:**
+
+sudo systemctl restart nginx 
+
+23. **Test Automatic Renewal:**
+
+The Certbot packages on your system come with a cron job or systemd timer that will renew your certificates automatically before they expire. You will not need to run Certbot again, unless you change your configuration. You can test automatic with the ff command
+
+sudo certbot renew --dry-run 
+
+The command to renew certbot is installed in one of the following locations:
+
+ /etc/crontab/ 
+/etc/cron.*/*
+systemctl list-timers       
+
+# 24.   Confirm that Certbot worked
+
+|   |
+|---|
+|https://yourwebsite.com/|
+
+To confirm that your site is set up properly, visit  in your browser and look for the lock icon in the URL bar.
+
+Congratulations! You have successfully set up a Django API on an EC2 instance using Nginx with HTTPS and a custom domain.
